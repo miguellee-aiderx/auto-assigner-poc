@@ -1,0 +1,56 @@
+name: Auto Assign Reviewers
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  assign:
+    runs-on: ubuntu-latest
+    if: |
+      (github.event_name == 'issue_comment' &&
+       github.event.issue.pull_request &&
+       github.event.comment.user.login == 'claude' &&
+       contains(github.event.comment.body, 'LGTM')) ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.review.user.login == 'claude' &&
+       github.event.review.state == 'APPROVED')
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      LANGUAGE: ko_KR:ko
+      GH_PAGER: cat
+    concurrency:
+      group: auto-assign-reviewers-${{ github.event.issue.number || github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install auto-assigner
+        run: |
+          cd tools/auto-assigner
+          pip install -e .
+
+      - name: Run auto-assigner
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.AUTO_ASSIGNER_SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ vars.AUTO_ASSIGNER_DRY_RUN || 'true' }}
+          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/.github/auto-assigner-config.yaml
+          EVENT_FILE: ${{ github.event_path }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          cd tools/auto-assigner
+          python -m auto_assigner

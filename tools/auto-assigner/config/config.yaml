@@ -1,0 +1,85 @@
+# a2-adm 리뷰어 자동 지정 설정.
+# 팀 구조, 라우팅 규칙, 가중치 변경 시 이 파일만 수정하면 됩니다.
+
+peer_pools:
+  backend_intern:
+    - junokim-aiderx
+    - bendo-aiderx
+    - sophiepark-aiderx
+  frontend:
+    - tonychoi-aiderx
+    - zoekim-aiderx
+    - wannykim-aiderx
+
+# Code Reviewer 가중치 (14일/37PR/46건 실측 데이터 기반)
+code_reviewers:
+  lucaskim-aiderx: 5
+  tedcho-aiderx: 4
+  hanmh-aiderx: 1
+
+# 작성자 login -> 역할 매핑.
+# 역할 이름은 peer_pools 키 또는 아래 special_roles 중 하나여야 합니다.
+author_roles:
+  # 백엔드 인턴
+  junokim-aiderx: backend_intern
+  bendo-aiderx: backend_intern
+  sophiepark-aiderx: backend_intern
+  # ian은 Peer 풀 제외
+  ianlee-aiderx: no_peer
+  # 프론트엔드 인턴
+  tonychoi-aiderx: frontend
+  zoekim-aiderx: frontend
+  # 프론트엔드 정직원
+  wannykim-aiderx: regular
+  # ML/운영 인턴
+  lucylee-aiderx: mlops
+  lylachoi-aiderx: mlops
+  # Code Reviewer
+  lucaskim-aiderx: code_reviewer
+  tedcho-aiderx: code_reviewer
+  # DevOps
+  hanmh-aiderx: devops
+
+# Peer 단계를 생략하고 Code Reviewer로 직행하는 special roles.
+# peer_pool이 비어 있는 것과 동일한 효과.
+special_roles:
+  - no_peer
+  - regular
+  - mlops
+  - code_reviewer
+  - devops
+
+# DevOps 키워드 (title/body/files에서 대소문자 구분 없이 검색)
+# ci, cd는 "CI/CD" 같은 문맥을 위해 포함하나, 코드에서는 단어 경계를 고려해 false positive를 줄입니다.
+devops_keywords:
+  - ci
+  - cd
+  - deploy
+  - deployment
+  - workflow
+  - docker
+  - dockerfile
+  - docker compose
+  - docker-compose
+  - compose
+  - github action
+  - terraform
+  - kubernetes
+  - k8s
+  - helm
+  - ansible
+  - jenkins
+  - argo
+  - gitlab runner
+
+# DevOps 키워드 매칭 시 Code Reviewer 후보에 추가할 사용자.
+devops_candidates:
+  - hanmh-aiderx
+
+# GitHub 라벨 이름
+labels:
+  auto_routed: auto-routed
+  skip_peer: skip-peer-review
+
+# Peer 리뷰어 지정 인원
+peer_count: 2

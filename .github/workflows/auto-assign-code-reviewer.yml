@@ -1,0 +1,52 @@
+name: Auto Assign Code Reviewer on Peer Approval
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  assign-code-reviewer:
+    runs-on: ubuntu-latest
+    # Peer 리뷰어의 APPROVED 이벤트만 처리. claude 본인의 approve는 무시.
+    if: |
+      github.event_name == 'pull_request_review' &&
+      github.event.review.state == 'APPROVED' &&
+      github.event.review.user.login != 'claude'
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    env:
+      LANGUAGE: ko_KR:ko
+      GH_PAGER: cat
+    concurrency:
+      group: auto-assign-code-reviewer-${{ github.event.pull_request.number }}
+      cancel-in-progress: false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install auto-assigner
+        run: |
+          cd tools/auto-assigner
+          pip install -e .
+
+      - name: Run staged assignment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.AUTO_ASSIGNER_SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ vars.AUTO_ASSIGNER_DRY_RUN || 'true' }}
+          STAGED_MODE: "true"
+          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/.github/auto-assigner-config.yaml
+          EVENT_FILE: ${{ github.event_path }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
+        run: |
+          cd tools/auto-assigner
+          python -m auto_assigner
