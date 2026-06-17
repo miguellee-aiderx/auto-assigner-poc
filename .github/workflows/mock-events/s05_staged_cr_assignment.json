@@ -1,0 +1,25 @@
+{
+  "__event_name": "pull_request_review",
+  "action": "submitted",
+  "review": {
+    "user": {
+      "login": "bendo-aiderx"
+    },
+    "state": "APPROVED",
+    "body": "LGTM",
+    "submitted_at": "2026-06-17T09:00:00Z"
+  },
+  "pull_request": {
+    "number": 1,
+    "user": {
+      "login": "miguellee-aiderx"
+    }
+  },
+  "repository": {
+    "full_name": "miguellee-aiderx/auto-assigner-poc",
+    "owner": {
+      "login": "miguellee-aiderx"
+    },
+    "name": "auto-assigner-poc"
+  }
+}

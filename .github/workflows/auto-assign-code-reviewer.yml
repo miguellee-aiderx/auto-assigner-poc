@@ -3,15 +3,26 @@ name: Auto Assign Code Reviewer on Peer Approval
 on:
   pull_request_review:
     types: [submitted]
+  workflow_dispatch:
+    inputs:
+      event_file:
+        description: 'Path to mock GitHub event JSON (relative to repo root)'
+        required: false
+        default: '.github/workflows/mock-events/s05_staged_cr_assignment.json'
+      config_file:
+        description: 'Path to auto-assigner config YAML (relative to repo root)'
+        required: false
+        default: '.github/auto-assigner-config.yaml'
 
 jobs:
   assign-code-reviewer:
     runs-on: ubuntu-latest
     # Peer 리뷰어의 APPROVED 이벤트만 처리. claude 본인의 approve는 무시.
     if: |
-      github.event_name == 'pull_request_review' &&
-      github.event.review.state == 'APPROVED' &&
-      github.event.review.user.login != 'claude'
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request_review' &&
+       github.event.review.state == 'APPROVED' &&
+       github.event.review.user.login != 'claude')
     permissions:
       contents: read
       pull-requests: write
@@ -44,8 +55,8 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.AUTO_ASSIGNER_SLACK_WEBHOOK_URL }}
           DRY_RUN: ${{ vars.AUTO_ASSIGNER_DRY_RUN || 'true' }}
           STAGED_MODE: "true"
-          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/.github/auto-assigner-config.yaml
-          EVENT_FILE: ${{ github.event_path }}
+          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/${{ github.event.inputs.config_file || '.github/auto-assigner-config.yaml' }}
+          EVENT_FILE: ${{ github.workspace }}/${{ github.event.inputs.event_file || github.event_path }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           cd tools/auto-assigner

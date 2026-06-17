@@ -11,6 +11,10 @@ on:
         description: 'Path to mock GitHub event JSON (relative to repo root)'
         required: false
         default: '.github/workflows/mock-events/issue_comment_lgtm.json'
+      config_file:
+        description: 'Path to auto-assigner config YAML (relative to repo root)'
+        required: false
+        default: '.github/auto-assigner-config.yaml'
 
 jobs:
   assign:
@@ -55,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SLACK_WEBHOOK_URL: ${{ secrets.AUTO_ASSIGNER_SLACK_WEBHOOK_URL }}
           DRY_RUN: ${{ vars.AUTO_ASSIGNER_DRY_RUN || 'true' }}
-          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/.github/auto-assigner-config.yaml
+          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/${{ github.event.inputs.config_file || '.github/auto-assigner-config.yaml' }}
           EVENT_FILE: ${{ github.workspace }}/${{ github.event.inputs.event_file || github.event_path }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
