@@ -83,6 +83,6 @@ class SlackNotifier:
             f"Repo: {repo}\n"
             f"PR: #{pr_number}\n"
             f"Error: {error}\n"
-            f"‼️人工개입이 필요할 수 있습니다."
+            f"‼️ 수동 개입이 필요할 수 있습니다."
         )
         self._send(text)
