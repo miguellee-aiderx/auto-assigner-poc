@@ -108,6 +108,14 @@ class Config:
         return str(value)
 
     @property
+    def code_reviewer_assigned_label(self) -> str:
+        """Code Reviewer 지정 멱등 가드용 라벨 이름."""
+        value = self._data.get("labels", {}).get(
+            "code_reviewer_assigned", "code-reviewer-assigned"
+        )
+        return str(value)
+
+    @property
     def peer_count(self) -> int:
         """Peer 리뷰어 지정 인원."""
         return int(self._data.get("peer_count", 2))

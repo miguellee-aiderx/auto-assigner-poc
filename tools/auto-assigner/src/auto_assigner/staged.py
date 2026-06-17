@@ -61,6 +61,20 @@ class StagedAssigner:
 
         auto_routed_label = self.config.auto_routed_label
         skip_peer_label = self.config.skip_peer_label
+        code_reviewer_assigned_label = self.config.code_reviewer_assigned_label
+
+        # 0. 멱등 가드: Code Reviewer가 이미 지정된 PR은 재실행 방지.
+        # 동시성 race로 인한 CR 중복 지정을 막기 위해 라벨 기반 원자성 사용.
+        if code_reviewer_assigned_label in labels:
+            return StagedResult(
+                should_act=False,
+                skipped_reason=f"{code_reviewer_assigned_label} 라벨이 이미 존재",
+                reviewers=[],
+                repo=repo,
+                pr_number=pr_number,
+                author=author,
+                actions_taken=[],
+            )
 
         # 1. 멱등 가드: 1차 라우팅이 실행된 PR만 staged 대상.
         if auto_routed_label not in labels:
@@ -153,7 +167,16 @@ class StagedAssigner:
 
         actions = [f"request_reviewers={','.join(reviewers)}"]
 
-        # 8. Slack 알림.
+        # 8. Code Reviewer 지정 멱등 라벨 부착.
+        self.github.add_label(
+            repo=repo,
+            pr_number=pr_number,
+            label=code_reviewer_assigned_label,
+            dry_run=self.dry_run,
+        )
+        actions.append(f"add_label={code_reviewer_assigned_label}")
+
+        # 9. Slack 알림.
         reason = f"Peer {len(approved_peers)}명 승인 완료로 Code Reviewer 자동 지정"
         if is_devops:
             reason += " (DevOps 키워드 감지)"

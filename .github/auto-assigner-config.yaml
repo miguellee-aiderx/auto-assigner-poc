@@ -71,6 +71,7 @@ devops_candidates:
 labels:
   auto_routed: auto-routed
   skip_peer: skip-peer-review
+  code_reviewer_assigned: code-reviewer-assigned
 
 # Peer 리뷰어 지정 인원
 peer_count: 2

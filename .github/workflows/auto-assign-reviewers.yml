@@ -32,7 +32,7 @@ jobs:
       LANGUAGE: ko_KR:ko
       GH_PAGER: cat
     concurrency:
-      group: auto-assign-reviewers-${{ github.event.issue.number || github.event.pull_request.number }}
+      group: auto-assign-${{ github.event.issue.number || github.event.pull_request.number }}
       cancel-in-progress: false
     steps:
       - name: Checkout repository
