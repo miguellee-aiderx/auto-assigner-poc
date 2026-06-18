@@ -1,0 +1,30 @@
+{
+  "__event_name": "pull_request_review",
+  "action": "submitted",
+  "pull_request": {
+    "number": 1,
+    "title": "[TEST] Non-LGTM review should skip",
+    "body": "Test PR where claude approves but does not say LGTM.",
+    "user": {
+      "login": "junokim-aiderx"
+    },
+    "labels": [],
+    "draft": false,
+    "files": ["src/main.py"],
+    "reviews": []
+  },
+  "review": {
+    "user": {
+      "login": "claude"
+    },
+    "state": "approved",
+    "body": "Looks good to me."
+  },
+  "repository": {
+    "full_name": "miguellee-aiderx/auto-assigner-poc",
+    "owner": {
+      "login": "miguellee-aiderx"
+    },
+    "name": "auto-assigner-poc"
+  }
+}

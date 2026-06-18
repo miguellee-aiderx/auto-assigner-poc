@@ -1,0 +1,48 @@
+name: Auto Assign Reviewers - Test All Scenarios
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test-scenarios:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        event_file:
+          - .github/workflows/mock-events/s03_skip_non_lgtm_review.json
+          - .github/workflows/mock-events/s04_backend_intern_draft_pr.json
+          - .github/workflows/mock-events/s05_regular_with_devops_keyword.json
+          - .github/workflows/mock-events/s05_staged_cr_assignment.json
+          - .github/workflows/mock-events/s12_devops_keyword_in_ci_yml.json
+          - .github/workflows/mock-events/s15_skip_peer_label.json
+          - .github/workflows/mock-events/s21_peer_shortage_one_available.json
+          - .github/workflows/mock-events/s22_peer_empty_goes_to_cr.json
+    name: ${{ matrix.event_file }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install auto-assigner
+        run: |
+          cd tools/auto-assigner
+          pip install -e .
+
+      - name: Run auto-assigner with mock event
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SLACK_WEBHOOK_URL: ${{ secrets.AUTO_ASSIGNER_SLACK_WEBHOOK_URL }}
+          DRY_RUN: ${{ vars.AUTO_ASSIGNER_DRY_RUN || 'true' }}
+          AUTO_ASSIGNER_CONFIG: ${{ github.workspace }}/.github/auto-assigner-config.yaml
+          EVENT_FILE: ${{ github.workspace }}/${{ matrix.event_file }}
+          GITHUB_EVENT_NAME: workflow_dispatch
+        run: |
+          cd tools/auto-assigner
+          python -m auto_assigner

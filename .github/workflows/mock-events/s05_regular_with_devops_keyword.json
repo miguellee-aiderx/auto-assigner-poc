@@ -1,0 +1,30 @@
+{
+  "__event_name": "pull_request_review",
+  "action": "submitted",
+  "pull_request": {
+    "number": 1,
+    "title": "[TEST] DevOps: update deploy workflow",
+    "body": "This PR updates the deployment pipeline.",
+    "user": {
+      "login": "wannykim-aiderx"
+    },
+    "labels": [],
+    "draft": false,
+    "files": [".github/workflows/deploy.yml"],
+    "reviews": []
+  },
+  "review": {
+    "user": {
+      "login": "claude"
+    },
+    "state": "approved",
+    "body": "LGTM"
+  },
+  "repository": {
+    "full_name": "miguellee-aiderx/auto-assigner-poc",
+    "owner": {
+      "login": "miguellee-aiderx"
+    },
+    "name": "auto-assigner-poc"
+  }
+}

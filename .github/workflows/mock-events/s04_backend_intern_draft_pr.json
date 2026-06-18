@@ -1,0 +1,30 @@
+{
+  "__event_name": "pull_request_review",
+  "action": "submitted",
+  "pull_request": {
+    "number": 1,
+    "title": "[TEST] Draft PR by backend intern",
+    "body": "Draft PR for auto-assigner test.",
+    "user": {
+      "login": "junokim-aiderx"
+    },
+    "labels": [],
+    "draft": true,
+    "files": ["src/main.py"],
+    "reviews": []
+  },
+  "review": {
+    "user": {
+      "login": "claude"
+    },
+    "state": "approved",
+    "body": "LGTM"
+  },
+  "repository": {
+    "full_name": "miguellee-aiderx/auto-assigner-poc",
+    "owner": {
+      "login": "miguellee-aiderx"
+    },
+    "name": "auto-assigner-poc"
+  }
+}
