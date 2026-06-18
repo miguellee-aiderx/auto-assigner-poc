@@ -55,6 +55,22 @@ class GitHubClient:
             "reviews": reviews,
         }
 
+    def fetch_files_and_reviews(self, repo: str, pr_number: int) -> tuple[list[str], list[dict[str, Any]]]:
+        """변경 파일 목록과 리뷰 목록만 조회한다.
+
+        payload에 이미 PR 메타데이터가 있는 경우(mock/테스트용) 사용.
+        """
+        fields = ["files", "reviews"]
+        out = self._run_gh([
+            "pr", "view", str(pr_number),
+            "--repo", repo,
+            "--json", ",".join(fields),
+        ])
+        data = json.loads(out)
+        files = [f.get("path", "") for f in data.get("files", [])]
+        reviews = data.get("reviews", [])
+        return files, reviews
+
     def request_reviewers(
         self,
         repo: str,

@@ -74,14 +74,24 @@ class Assigner:
             )
 
         # 2. PR 메타데이터 조회.
-        pr_data = self.github.fetch_pr(repo, pr_number)
-        author = pr_data["author"]
-        labels = pr_data["labels"]
-        title = pr_data["title"]
-        body = pr_data["body"]
-        files = pr_data["files"]
-        reviews = pr_data["reviews"]
-        is_draft = pr_data["is_draft"]
+        # payload에 mock PR 메타데이터가 있으면 우선 사용하고,
+        # 실제 GitHub API로는 변경 파일과 리뷰 목록만 보완 조회.
+        if event.pr_author is not None:
+            author = event.pr_author
+            labels = event.pr_labels or []
+            title = event.pr_title
+            body = event.pr_body
+            is_draft = event.pr_is_draft or False
+            files, reviews = self.github.fetch_files_and_reviews(repo, pr_number)
+        else:
+            pr_data = self.github.fetch_pr(repo, pr_number)
+            author = pr_data["author"]
+            labels = pr_data["labels"]
+            title = pr_data["title"]
+            body = pr_data["body"]
+            files = pr_data["files"]
+            reviews = pr_data["reviews"]
+            is_draft = pr_data["is_draft"]
 
         # 3. 멱등 가드: 사람이 수동으로 수정한 경우를 보호.
         # auto-routed 라벨이 있으면 이 엔진은 다시 개입하지 않음.

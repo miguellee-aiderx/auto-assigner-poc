@@ -22,6 +22,11 @@ class FakeGitHubClient(GitHubClient):
     def fetch_pr(self, repo: str, pr_number: int) -> dict:
         return self.pr_data
 
+    def fetch_files_and_reviews(
+        self, repo: str, pr_number: int
+    ) -> tuple[list[str], list[dict]]:
+        return self.pr_data["files"], self.pr_data["reviews"]
+
     def request_reviewers(
         self, repo: str, pr_number: int, reviewers: list[str], *, dry_run: bool
     ) -> None:
@@ -232,3 +237,54 @@ def test_assigner_peer_empty_goes_to_code_reviewer(load_fixture):
     actions = [c[0] for c in fake_github.calls]
     assert "request_reviewers" in actions
     assert "add_label" in actions
+
+
+def test_assigner_uses_payload_pr_metadata_for_pull_request_review():
+    """pull_request_review payload에 PR 메타데이터가 있으면 GitHub API 대신 사용한다."""
+    payload = {
+        "action": "submitted",
+        "pull_request": {
+            "number": 1,
+            "title": "[TEST] Peer shortage: 0 available → CR",
+            "body": "Test PR where all peer candidates are unavailable.",
+            "user": {"login": "junokim-aiderx"},
+            "labels": [],
+            "draft": False,
+        },
+        "review": {
+            "user": {"login": "claude"},
+            "state": "APPROVED",
+            "body": "LGTM",
+        },
+        "repository": {
+            "full_name": "miguellee-aiderx/auto-assigner-poc",
+            "owner": {"login": "miguellee-aiderx"},
+            "name": "auto-assigner-poc",
+        },
+    }
+    event = parse_event(payload, "pull_request_review")
+    assert event is not None
+    assert event.pr_author == "junokim-aiderx"
+
+    # GitHub API는 files/reviews만 조회하므로 fetch_pr 대신 fetch_files_and_reviews를 호출.
+    fake_github = FakeGitHubClient(
+        _make_pr_data(
+            "should-not-be-used",
+            [],
+            reviews=[
+                {"state": "APPROVED", "author": {"login": "bendo-aiderx"}},
+                {"state": "APPROVED", "author": {"login": "sophiepark-aiderx"}},
+            ],
+        )
+    )
+    fake_slack = FakeSlackNotifier()
+    assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=True)
+
+    result = assigner.run(event)
+
+    assert result.should_act is True
+    assert result.author == "junokim-aiderx"
+    assert result.assignment.stage == CONFIG.STAGE_CODE_REVIEWER
+    assert "Peer 후보 부족" in result.assignment.reason
+    assert len(fake_slack.messages) == 1
+    assert fake_slack.messages[0]["author"] == "junokim-aiderx"

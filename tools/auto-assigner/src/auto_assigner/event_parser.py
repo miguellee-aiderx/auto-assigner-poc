@@ -24,6 +24,11 @@ class Event:
         pr_number: PR 번호.
         actor: 이벤트를 발생시킨 GitHub login.
         is_lgtm: 본문에 LGTM 문자열이 포함되어 있는지 여부.
+        pr_title: payload에 포함된 PR 제목(mock/테스트용).
+        pr_body: payload에 포함된 PR 본문(mock/테스트용).
+        pr_author: payload에 포함된 PR 작성자 login(mock/테스트용).
+        pr_labels: payload에 포함된 PR 라벨 목록(mock/테스트용).
+        pr_is_draft: payload에 포함된 PR draft 여부(mock/테스트용).
         raw: 원본 JSON payload(디버깅/확장용).
     """
 
@@ -33,7 +38,12 @@ class Event:
     pr_number: int
     actor: str
     is_lgtm: bool
-    raw: dict[str, Any]
+    pr_title: str | None = None
+    pr_body: str | None = None
+    pr_author: str | None = None
+    pr_labels: list[str] | None = None
+    pr_is_draft: bool | None = None
+    raw: dict[str, Any] | None = None
 
 
 def _extract_repo(event: dict[str, Any]) -> tuple[str, str]:
@@ -84,6 +94,14 @@ def parse_issue_comment(event: dict[str, Any]) -> Event | None:
     )
 
 
+def _extract_pr_labels(pr: dict[str, Any]) -> list[str]:
+    """payload의 PR labels 목록에서 이름만 추출한다."""
+    labels = pr.get("labels", [])
+    if isinstance(labels, list):
+        return [label["name"] if isinstance(label, dict) else str(label) for label in labels]
+    return []
+
+
 def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
     """pull_request_review.submitted 이벤트를 파싱한다.
 
@@ -103,6 +121,13 @@ def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
 
     is_lgtm = state == "APPROVED" and _contains_lgtm(body)
 
+    pr_user = pr.get("user", {})
+    pr_author = pr_user.get("login") if isinstance(pr_user, dict) else None
+    pr_title = pr.get("title")
+    pr_body = pr.get("body")
+    pr_labels = _extract_pr_labels(pr)
+    pr_is_draft = pr.get("draft")
+
     return Event(
         event_name="pull_request_review",
         repo_owner=owner,
@@ -110,6 +135,11 @@ def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
         pr_number=pr_number,
         actor=actor,
         is_lgtm=is_lgtm,
+        pr_title=pr_title,
+        pr_body=pr_body,
+        pr_author=pr_author,
+        pr_labels=pr_labels,
+        pr_is_draft=pr_is_draft,
         raw=event,
     )
 
