@@ -11,10 +11,11 @@ peer_pools:
     - zoekim-aiderx
     - wannykim-aiderx
 
-# Code Reviewer 가중치 (14일/37PR/46건 실측 데이터 기반)
+# Code Reviewer 가중치 (150개 closed PR 실측 기반: lucaskim 73%, tedcho 25%, hanmh 1.7%)
+# 루카스 대표의 최종 리뷰 의도를 반영, 운영하면서 지속 조정.
 code_reviewers:
-  lucaskim-aiderx: 5
-  tedcho-aiderx: 4
+  lucaskim-aiderx: 6
+  tedcho-aiderx: 3
   hanmh-aiderx: 1
 
 # 작성자 login -> 역할 매핑.
