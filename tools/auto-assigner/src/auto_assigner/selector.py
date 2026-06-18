@@ -12,23 +12,22 @@ import random
 def select_peers(peer_pool: frozenset[str], exclude: set[str], count: int) -> list[str]:
     """Peer 풀에서 제외 대상을 뺀 뒤 count명을 무작위로 선정한다.
 
+    후보가 count명보다 적으면 가능한 만큼만 선정한다.
+    운영 중 Peer 후보가 부족한 경우에도 workflow가 중단되지 않도록 하기 위함.
+
     Args:
         peer_pool: 전체 Peer 후보 집합.
         exclude: 선정에서 제외할 로그인 집합(작성자, 이미 승인자 등).
         count: 선정할 인원 수.
 
-    Raises:
-        ValueError: 후보가 count명보다 적을 때 발생.
+    Returns:
+        선정된 peer login 목록. 후보가 0명이면 빈 리스트를 반환.
     """
     candidates = list(peer_pool - exclude)
-    if len(candidates) < count:
-        raise ValueError(
-            f"후보 부족: 필요 {count}명, 가능 {len(candidates)}명 "
-            f"(pool={peer_pool}, exclude={exclude})"
-        )
-    # 복원 추출 없이 한 번에 셔플 후 상위 count명을 반환.
+    # 후보가 count보다 적으면 가능한 만큼만 선정.
+    selected_count = min(len(candidates), count)
     random.shuffle(candidates)
-    return candidates[:count]
+    return candidates[:selected_count]
 
 
 def select_code_reviewers(

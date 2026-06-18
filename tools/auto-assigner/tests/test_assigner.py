@@ -56,7 +56,12 @@ class FakeSlackNotifier(SlackNotifier):
         )
 
 
-def _make_pr_data(author: str, labels: list[str], is_draft: bool = False) -> dict:
+def _make_pr_data(
+    author: str,
+    labels: list[str],
+    is_draft: bool = False,
+    reviews: list[dict] | None = None,
+) -> dict:
     return {
         "number": 352,
         "title": "test",
@@ -65,7 +70,7 @@ def _make_pr_data(author: str, labels: list[str], is_draft: bool = False) -> dic
         "labels": labels,
         "files": ["src/main.py"],
         "is_draft": is_draft,
-        "reviews": [],
+        "reviews": reviews or [],
     }
 
 
@@ -132,3 +137,98 @@ def test_assigner_ignores_non_claude_actor(load_fixture):
 
     assert result.should_act is False
     assert len(fake_github.calls) == 0
+
+
+def test_assigner_ignores_non_lgtm_comment(load_fixture):
+    payload = load_fixture("backend_intern_lgtm.json")
+    payload["comment"]["body"] = "just a regular comment"
+    event = parse_event(payload, "issue_comment")
+
+    fake_github = FakeGitHubClient(_make_pr_data("junokim-aiderx", []))
+    fake_slack = FakeSlackNotifier()
+    assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=False)
+
+    result = assigner.run(event)
+
+    assert result.should_act is False
+    assert len(fake_github.calls) == 0
+    assert len(fake_slack.messages) == 0
+
+
+def test_assigner_handles_pull_request_review_event(load_fixture):
+    payload = load_fixture("backend_intern_lgtm.json")
+    # pull_request_review 이벤트 형태로 변환
+    payload["action"] = "submitted"
+    payload["review"] = {
+        "user": {"login": "claude"},
+        "state": "APPROVED",
+        "body": "LGTM",
+    }
+    event = parse_event(payload, "pull_request_review")
+
+    fake_github = FakeGitHubClient(_make_pr_data("junokim-aiderx", []))
+    fake_slack = FakeSlackNotifier()
+    assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=True)
+
+    result = assigner.run(event)
+
+    assert result.should_act is True
+    assert result.assignment.stage == CONFIG.STAGE_PEER
+    assert len(result.assignment.reviewers) == 2
+
+
+def test_assigner_peer_shortage_one_peer_still_acts(load_fixture):
+    payload = load_fixture("backend_intern_lgtm.json")
+    event = parse_event(payload, "issue_comment")
+
+    # bendo가 이미 승인하여 Peer 후보 1명만 남음.
+    fake_github = FakeGitHubClient(
+        _make_pr_data(
+            "junokim-aiderx",
+            [],
+            reviews=[{"state": "APPROVED", "author": {"login": "bendo-aiderx"}}],
+        )
+    )
+    fake_slack = FakeSlackNotifier()
+    assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=True)
+
+    result = assigner.run(event)
+
+    assert result.should_act is True
+    assert result.assignment.stage == CONFIG.STAGE_PEER
+    assert len(result.assignment.reviewers) == 1
+
+    actions = [c[0] for c in fake_github.calls]
+    assert "request_reviewers" in actions
+    assert "add_label" in actions
+    assert len(fake_slack.messages) == 1
+    assert "후보 부족" in fake_slack.messages[0]["reason"]
+
+
+def test_assigner_peer_empty_goes_to_code_reviewer(load_fixture):
+    payload = load_fixture("backend_intern_lgtm.json")
+    event = parse_event(payload, "issue_comment")
+
+    # bendo, sophie가 이미 승인하여 Peer 후보 0명 → CR 직행.
+    fake_github = FakeGitHubClient(
+        _make_pr_data(
+            "junokim-aiderx",
+            [],
+            reviews=[
+                {"state": "APPROVED", "author": {"login": "bendo-aiderx"}},
+                {"state": "APPROVED", "author": {"login": "sophiepark-aiderx"}},
+            ],
+        )
+    )
+    fake_slack = FakeSlackNotifier()
+    assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=True)
+
+    result = assigner.run(event)
+
+    assert result.should_act is True
+    assert result.assignment.stage == CONFIG.STAGE_CODE_REVIEWER
+    assert len(result.assignment.reviewers) == 1
+
+    actions = [c[0] for c in fake_github.calls]
+    assert "request_reviewers" in actions
+    assert "add_label" in actions

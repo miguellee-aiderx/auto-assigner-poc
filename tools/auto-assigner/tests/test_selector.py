@@ -25,8 +25,16 @@ def test_select_peers_exclude_author():
 
 
 def test_select_peers_insufficient_candidates():
-    with pytest.raises(ValueError):
-        select_peers(BACKEND_PEERS, exclude={"junokim-aiderx"}, count=3)
+    # 후보가 count보다 적으면 가능한 만큼만 선정한다.
+    peers = select_peers(BACKEND_PEERS, exclude={"junokim-aiderx"}, count=3)
+    assert len(peers) == 2
+    assert set(peers) <= BACKEND_PEERS
+    assert "junokim-aiderx" not in peers
+
+
+def test_select_peers_empty_pool_returns_empty():
+    peers = select_peers(frozenset(), exclude=set(), count=2)
+    assert peers == []
 
 
 def test_select_code_reviewers_count():

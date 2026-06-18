@@ -56,8 +56,15 @@ def _detect_devops(
     haystack += " " + " ".join(f.lower() for f in files)
 
     # 키워드 양옆에 경계 문자를 추가해 단어 단위 매칭 수행.
-    # 예: "ci/cd" → " ci/cd " 와 " ci " 매칭 가능.
-    bounded_haystack = f" {haystack} ".replace("/", " ").replace("_", " ").replace("-", " ")
+    # 예: "ci/cd" → " ci cd " 와 " ci " 매칭 가능.
+    # 파일 확장자(예: "ci.yml")에서도 분리되도록 "."도 경계로 처리.
+    bounded_haystack = (
+        f" {haystack} "
+        .replace("/", " ")
+        .replace("_", " ")
+        .replace("-", " ")
+        .replace(".", " ")
+    )
 
     for keyword in config.devops_keywords:
         # 공백이 포함된 키워드(예: "docker compose")는 bounded_haystack에서 그대로 검색.
@@ -128,13 +135,21 @@ def assign_reviewers(
         peers = select_peers(
             team.peer_pool, exclude=exclude, count=config.peer_count
         )
-        return AssignmentResult(
-            stage=config.STAGE_PEER,
-            reviewers=peers,
-            reason=f"{role} 작성자: Peer {config.peer_count}명 지정",
-            skip_peer=skip_peer,
-            is_devops=is_devops,
-        )
+
+        # Peer 후보가 0명이면 Code Reviewer로 직행.
+        if not peers:
+            skip_peer = True
+        else:
+            reason = f"{role} 작성자: Peer {len(peers)}명 지정"
+            if len(peers) < config.peer_count:
+                reason += f" (후보 부족: 목표 {config.peer_count}명, 가능 {len(peers)}명)"
+            return AssignmentResult(
+                stage=config.STAGE_PEER,
+                reviewers=peers,
+                reason=reason,
+                skip_peer=skip_peer,
+                is_devops=is_devops,
+            )
 
     # Peer 단계가 아닌 경우 Code Reviewer를 직행 선정.
     candidate_weights = dict(team.code_reviewer_weights)

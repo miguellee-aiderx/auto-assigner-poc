@@ -54,7 +54,7 @@ class SlackNotifier:
         """
         mode = "DRY-RUN" if dry_run else "LIVE"
         stage_display = "Peer" if stage == "peer" else "Code Reviewer"
-        reviewers_text = ", ".join(f"@{r}" for r in reviewers)
+        reviewers_text = ", ".join(f"@{r}" for r in reviewers) if reviewers else "없음"
 
         text = (
             f"[{mode}] Auto Assign Reviewers\n"
@@ -83,6 +83,6 @@ class SlackNotifier:
             f"Repo: {repo}\n"
             f"PR: #{pr_number}\n"
             f"Error: {error}\n"
-            f"‼️ 수동 개입이 필요할 수 있습니다."
+            f"‼️人工개입이 필요할 수 있습니다."
         )
         self._send(text)

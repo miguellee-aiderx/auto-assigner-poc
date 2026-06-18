@@ -110,13 +110,14 @@ class Assigner:
         actions: list[str] = []
 
         # 5. Review Request.
-        self.github.request_reviewers(
-            repo=repo,
-            pr_number=pr_number,
-            reviewers=assignment.reviewers,
-            dry_run=self.dry_run,
-        )
-        actions.append(f"request_reviewers={','.join(assignment.reviewers)}")
+        if assignment.reviewers:
+            self.github.request_reviewers(
+                repo=repo,
+                pr_number=pr_number,
+                reviewers=assignment.reviewers,
+                dry_run=self.dry_run,
+            )
+            actions.append(f"request_reviewers={','.join(assignment.reviewers)}")
 
         # 6. Draft PR인 경우 Ready for Review로 전환.
         if is_draft:
@@ -157,15 +158,5 @@ class Assigner:
         )
 
     def _should_process(self, event: Event) -> bool:
-        """claude 봇이 남긴 LGTM/APPROVE 이벤트인지 확인한다.
-
-        pull_request_review 이벤트에서는 APPROVED 상태만으로도 LGTM으로 간주.
-        issue_comment 이벤트에서는 본문에 LGTM 문자열이 필요.
-        """
-        if event.actor != "claude":
-            return False
-        if event.event_name == "pull_request_review":
-            # workflow if에서 APPROVED만 확인하므로, Python 내부에서도 일관되게 처리.
-            # 본문 LGTM은 필수가 아님.
-            return True
-        return event.is_lgtm
+        """claude 봇이 남긴 LGTM 이벤트인지 확인한다."""
+        return event.actor == "claude" and event.is_lgtm
