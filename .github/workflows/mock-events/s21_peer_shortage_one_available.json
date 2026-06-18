@@ -9,7 +9,11 @@
       "login": "junokim-aiderx"
     },
     "labels": [],
-    "draft": false
+    "draft": false,
+    "files": ["src/main.py"],
+    "reviews": [
+      {"state": "APPROVED", "author": {"login": "bendo-aiderx"}}
+    ]
   },
   "review": {
     "user": {

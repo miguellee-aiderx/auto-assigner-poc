@@ -82,7 +82,9 @@ class Assigner:
             title = event.pr_title
             body = event.pr_body
             is_draft = event.pr_is_draft or False
-            files, reviews = self.github.fetch_files_and_reviews(repo, pr_number)
+            files, reviews = self.github.fetch_files_and_reviews(
+                repo, pr_number, raw_event=event.raw
+            )
         else:
             pr_data = self.github.fetch_pr(repo, pr_number)
             author = pr_data["author"]

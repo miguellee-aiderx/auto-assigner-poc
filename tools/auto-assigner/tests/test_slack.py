@@ -71,3 +71,4 @@ def test_notify_failure_includes_repo_and_pr():
     assert "[LIVE] Auto Assign Reviewers FAILED" in text
     assert "PR: #3" in text
     assert "No matching author role" in text
+    assert "사람개입이 필요할 수 있습니다" in text

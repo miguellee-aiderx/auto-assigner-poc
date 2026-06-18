@@ -55,11 +55,29 @@ class GitHubClient:
             "reviews": reviews,
         }
 
-    def fetch_files_and_reviews(self, repo: str, pr_number: int) -> tuple[list[str], list[dict[str, Any]]]:
-        """변경 파일 목록과 리뷰 목록만 조회한다.
+    def fetch_files_and_reviews(
+        self,
+        repo: str,
+        pr_number: int,
+        raw_event: dict[str, Any] | None = None,
+    ) -> tuple[list[str], list[dict[str, Any]]]:
+        """변경 파일 목록과 리뷰 목록을 조회한다.
 
-        payload에 이미 PR 메타데이터가 있는 경우(mock/테스트용) 사용.
+        payload에 mock files/reviews가 있으면 GitHub API 조회를 생략하고
+        그것을 사용한다. 그렇지 않으면 gh pr view로 조회.
         """
+        if raw_event:
+            pr = raw_event.get("pull_request", {})
+            raw_files = pr.get("files", [])
+            raw_reviews = pr.get("reviews", [])
+            if raw_files or raw_reviews:
+                files = [
+                    f.get("path", "") if isinstance(f, dict) else str(f)
+                    for f in raw_files
+                ]
+                reviews = [r for r in raw_reviews if isinstance(r, dict)]
+                return files, reviews
+
         fields = ["files", "reviews"]
         out = self._run_gh([
             "pr", "view", str(pr_number),

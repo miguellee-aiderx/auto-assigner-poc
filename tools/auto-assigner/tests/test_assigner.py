@@ -23,8 +23,16 @@ class FakeGitHubClient(GitHubClient):
         return self.pr_data
 
     def fetch_files_and_reviews(
-        self, repo: str, pr_number: int
+        self,
+        repo: str,
+        pr_number: int,
+        raw_event: dict | None = None,
     ) -> tuple[list[str], list[dict]]:
+        if raw_event:
+            pr = raw_event.get("pull_request", {})
+            files = pr.get("files", self.pr_data["files"])
+            reviews = pr.get("reviews", self.pr_data["reviews"])
+            return files, reviews
         return self.pr_data["files"], self.pr_data["reviews"]
 
     def request_reviewers(
@@ -250,6 +258,11 @@ def test_assigner_uses_payload_pr_metadata_for_pull_request_review():
             "user": {"login": "junokim-aiderx"},
             "labels": [],
             "draft": False,
+            "files": ["src/main.py"],
+            "reviews": [
+                {"state": "APPROVED", "author": {"login": "bendo-aiderx"}},
+                {"state": "APPROVED", "author": {"login": "sophiepark-aiderx"}},
+            ],
         },
         "review": {
             "user": {"login": "claude"},
@@ -266,17 +279,8 @@ def test_assigner_uses_payload_pr_metadata_for_pull_request_review():
     assert event is not None
     assert event.pr_author == "junokim-aiderx"
 
-    # GitHub API는 files/reviews만 조회하므로 fetch_pr 대신 fetch_files_and_reviews를 호출.
-    fake_github = FakeGitHubClient(
-        _make_pr_data(
-            "should-not-be-used",
-            [],
-            reviews=[
-                {"state": "APPROVED", "author": {"login": "bendo-aiderx"}},
-                {"state": "APPROVED", "author": {"login": "sophiepark-aiderx"}},
-            ],
-        )
-    )
+    # payload의 files/reviews를 우선 사용하므로 GitHub API 응답은 무시됨.
+    fake_github = FakeGitHubClient(_make_pr_data("should-not-be-used", []))
     fake_slack = FakeSlackNotifier()
     assigner = Assigner(fake_github, fake_slack, config=CONFIG, dry_run=True)
 

@@ -43,6 +43,8 @@ class Event:
     pr_author: str | None = None
     pr_labels: list[str] | None = None
     pr_is_draft: bool | None = None
+    pr_files: list[str] | None = None
+    pr_reviews: list[dict[str, Any]] | None = None
     raw: dict[str, Any] | None = None
 
 
@@ -127,6 +129,8 @@ def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
     pr_body = pr.get("body")
     pr_labels = _extract_pr_labels(pr)
     pr_is_draft = pr.get("draft")
+    pr_files = [f.get("path", "") if isinstance(f, dict) else str(f) for f in pr.get("files", [])]
+    pr_reviews = [r for r in pr.get("reviews", []) if isinstance(r, dict)]
 
     return Event(
         event_name="pull_request_review",
@@ -140,6 +144,8 @@ def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
         pr_author=pr_author,
         pr_labels=pr_labels,
         pr_is_draft=pr_is_draft,
+        pr_files=pr_files,
+        pr_reviews=pr_reviews,
         raw=event,
     )
 
