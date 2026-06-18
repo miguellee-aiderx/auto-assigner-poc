@@ -121,7 +121,7 @@ def parse_pull_request_review(event: dict[str, Any]) -> Event | None:
     owner, name = _extract_repo(event)
     pr_number = pr.get("number", 0)
 
-    is_lgtm = state == "APPROVED" and _contains_lgtm(body)
+    is_lgtm = state.upper() == "APPROVED" and _contains_lgtm(body)
 
     pr_user = pr.get("user", {})
     pr_author = pr_user.get("login") if isinstance(pr_user, dict) else None
