@@ -53,7 +53,7 @@ class SlackNotifier:
         dry-run에서도 전송하여 6/17~6/19 기간 오탐 빈도를 측정.
         """
         mode = "DRY-RUN" if dry_run else "LIVE"
-        stage_display = "Peer" if stage == "peer" else "Code Reviewer"
+        stage_display = "1단계: 동료리뷰어" if stage == "peer" else "2단계: 코드리뷰어"
         reviewers_text = ", ".join(f"@{r}" for r in reviewers) if reviewers else "없음"
 
         pr_url = f"https://github.com/{repo}/pull/{pr_number}"
@@ -61,10 +61,10 @@ class SlackNotifier:
             f"[{mode}] Auto Assign Reviewers\n"
             f"Repo: {repo}\n"
             f"PR: <{pr_url}|#{pr_number} {title}>\n"
-            f"Author: @{author}\n"
-            f"Stage: {stage_display}\n"
-            f"Reviewers: {reviewers_text}\n"
-            f"Reason: {reason}"
+            f"작성자: @{author}\n"
+            f"단계: {stage_display}\n"
+            f"리뷰어: {reviewers_text}\n"
+            f"이유: {reason}"
         )
         self._send(text)
 
