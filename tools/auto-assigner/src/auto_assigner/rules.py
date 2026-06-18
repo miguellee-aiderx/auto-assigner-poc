@@ -130,6 +130,7 @@ def assign_reviewers(
     approved = _already_approved(reviews, set())
 
     # Peer 풀이 있고 skip-peer-review 라벨이 없으면 Peer 단계로 진행.
+    peer_shortage = False
     if team.peer_pool and not skip_peer:
         exclude = {author} | approved
         peers = select_peers(
@@ -138,6 +139,7 @@ def assign_reviewers(
 
         # Peer 후보가 0명이면 Code Reviewer로 직행.
         if not peers:
+            peer_shortage = True
             skip_peer = True
         else:
             reason = f"{role} 작성자: Peer {len(peers)}명 지정"
@@ -166,7 +168,9 @@ def assign_reviewers(
     reason = f"{role} 작성자: Code Reviewer 직행"
     if is_devops:
         reason += " (DevOps 키워드 감지)"
-    if skip_peer:
+    if peer_shortage:
+        reason += " (Peer 후보 부족)"
+    elif skip_peer:
         reason += " (skip-peer-review 라벨)"
 
     return AssignmentResult(

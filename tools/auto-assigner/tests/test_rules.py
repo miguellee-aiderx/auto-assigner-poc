@@ -243,6 +243,8 @@ def test_peer_pool_empty_goes_to_code_reviewer():
     assert result.stage == CONFIG.STAGE_CODE_REVIEWER
     assert len(result.reviewers) == 1
     assert "junokim-aiderx" not in result.reviewers
+    assert "Peer 후보 부족" in result.reason
+    assert "skip-peer-review" not in result.reason
 
 
 def test_code_reviewer_pool_insufficient_raises():

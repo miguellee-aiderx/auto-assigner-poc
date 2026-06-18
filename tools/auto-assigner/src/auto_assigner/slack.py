@@ -56,11 +56,11 @@ class SlackNotifier:
         stage_display = "Peer" if stage == "peer" else "Code Reviewer"
         reviewers_text = ", ".join(f"@{r}" for r in reviewers) if reviewers else "없음"
 
+        pr_url = f"https://github.com/{repo}/pull/{pr_number}"
         text = (
             f"[{mode}] Auto Assign Reviewers\n"
             f"Repo: {repo}\n"
-            f"PR: #{pr_number}\n"
-            f"Title: {title}\n"
+            f"PR: <{pr_url}|#{pr_number} {title}>\n"
             f"Author: @{author}\n"
             f"Stage: {stage_display}\n"
             f"Reviewers: {reviewers_text}\n"
