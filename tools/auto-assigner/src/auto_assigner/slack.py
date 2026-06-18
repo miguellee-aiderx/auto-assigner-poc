@@ -62,7 +62,7 @@ class SlackNotifier:
             f"Repo: {repo}\n"
             f"PR: <{pr_url}|#{pr_number} {title}>\n"
             f"작성자: @{author}\n"
-            f"단계: {stage_display}\n"
+            f"{stage_display}\n"
             f"리뷰어: {reviewers_text}\n"
             f"이유: {reason}"
         )

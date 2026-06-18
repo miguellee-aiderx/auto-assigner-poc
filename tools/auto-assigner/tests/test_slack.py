@@ -36,7 +36,8 @@ def test_notify_includes_pr_link_and_title():
     assert "[DRY-RUN] Auto Assign Reviewers" in text
     assert "<https://github.com/miguellee-aiderx/auto-assigner-poc/pull/1|#1 [TEST] PR #1 for auto-assigner poc>" in text
     assert "리뷰어: @alice-aiderx, @bob-aiderx" in text
-    assert "단계: 1단계: 동료리뷰어" in text
+    assert "1단계: 동료리뷰어" in text
+    assert "\n단계:" not in text
     assert "이유: 인턴 작성자: Peer Review 2명 지정" in text
 
 
@@ -56,7 +57,7 @@ def test_notify_shows_empty_reviewers_as_none():
 
     text = notifier.captured_texts[0]
     assert "리뷰어: 없음" in text
-    assert "단계: 2단계: 코드리뷰어" in text
+    assert "2단계: 코드리뷰어" in text
     assert "이유: Peer 후보 부족: Code Reviewer 직행" in text
 
 
